@@ -1,47 +1,39 @@
 from flask import Flask, request, jsonify
-import onnxruntime as rt
-import numpy as np
+from flask_cors import CORS
 import joblib
+import numpy as np
 
-# Crear app
 app = Flask(__name__)
+CORS(app)  # Permite llamadas desde cualquier frontend
 
-# Cargar scaler
-scaler = joblib.load("scaler_estudiantes.pkl")
-
-# Cargar modelo ONNX
-session = rt.InferenceSession("modelo_estudiantes.onnx")
-input_name = session.get_inputs()[0].name
-
-@app.route('/', methods=['GET'])
-def home():
-    return "API funcionando."
+# Cargar modelo entrenado
+modelo = joblib.load("mi_modelo.pkl")
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
 
-        nivel = float(data["nivel"])
-        nota = float(data["nota"])
-        socio = float(data["socio"])
-        motiv = float(data["motivacion"])
-        respon = float(data["responsabilidad"])
+        # Convertimos todos los campos a float
+        nivel = float(data.get('nivel', 0))
+        nota = float(data.get('nota', 0))
+        situacion = float(data.get('situacion', 0))
+        motivacion = float(data.get('motivacion', 0))
+        responsabilidad = float(data.get('responsabilidad', 0))
 
-        X = np.array([[nivel, nota, socio, motiv, respon]], dtype=np.float32)
+        # Crear array para el modelo
+        X = np.array([[nivel, nota, situacion, motivacion, responsabilidad]])
+        pred = modelo.predict(X)
 
-        X_scaled = scaler.transform(X)
-
-        pred = session.run(None, {input_name: X_scaled.astype(np.float32)})[0]
-        pred_value = float(pred[0][0])
-
-        return jsonify({"prediccion": pred_value})
+        return jsonify({'prediccion': float(pred[0])})
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({'error': str(e)}), 400
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000)
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
 
 
 
