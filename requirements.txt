@@ -3,5 +3,7 @@ gunicorn
 numpy
 joblib
 onnxruntime
+scikit-learn
+
 
 
