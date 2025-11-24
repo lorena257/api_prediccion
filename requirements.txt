@@ -4,6 +4,8 @@ numpy
 joblib
 onnxruntime
 scikit-learn
+flask-cors
+
 
 
 
